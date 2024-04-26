@@ -106,6 +106,7 @@ def main(cfg: TrainConfig) -> None:
     barrier()
 
     # Maybe start W&B run.
+    aim_run = None
     if cfg.logging is not None and (get_global_rank() == 0 or not cfg.logging.rank_zero_only):
         if cfg.logging.method == "wandb":
             wandb_dir = Path(cfg.save_folder) / "wandb"
@@ -223,6 +224,7 @@ def main(cfg: TrainConfig) -> None:
     # Consolidate components into `Trainer` object.
     with Trainer(
         cfg=cfg,
+        aim=aim_run,
         epoch=cfg.epoch,
         model=olmo_model,
         fsdp_model=fsdp_model,

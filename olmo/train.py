@@ -118,6 +118,7 @@ def cross_entropy_loss(
 @dataclass
 class Trainer:
     cfg: TrainConfig
+    aim: None
     model: OLMo
     fsdp_model: FSDP
     optim: Optimizer
@@ -963,8 +964,8 @@ class Trainer:
             eval_metrics = self.eval()
             if wandb.run is not None:
                 wandb.log(eval_metrics, step=self.global_step)
-            if self.cfg.aim is not None:
-                self.cfg.aim.track(eval_metrics, step=self.global_step)
+            if self.aim is not None:
+                self.aim.track(eval_metrics, step=self.global_step)
 
         # Set model to 'train' mode.
         self.fsdp_model.train()
@@ -980,8 +981,8 @@ class Trainer:
             self.log_metrics_to_console("Pre-train system metrics", sys_metrics)
             if wandb.run is not None:
                 wandb.log(sys_metrics, step=0)
-            if self.cfg.aim is not None:
-                self.cfg.aim.track(sys_metrics, step=self.global_step)
+            if self.aim is not None:
+                self.aim.track(sys_metrics, step=self.global_step)
 
         # Python Profiler stuff
         if self.cfg.python_profiling:
@@ -1090,11 +1091,11 @@ class Trainer:
 
                     # Log metrics to aim.
                     if (
-                        self.cfg.aim is not None
+                        self.aim is not None
                         and self.cfg.logging is not None
                         and self.global_step % self.cfg.logging.log_interval == 0
                     ):
-                        self.cfg.aim.track(metrics, step=self.global_step)
+                        self.aim.track(metrics, step=self.global_step)
 
                     # Check if/when run should be canceled.
                     if not cancel_initiated and self.global_step % self.cfg.canceled_check_interval == 0:
