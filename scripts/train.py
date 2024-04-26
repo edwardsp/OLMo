@@ -107,13 +107,14 @@ def main(cfg: TrainConfig) -> None:
         elif cfg.logging.method == "aim":
             aim_dir = Path(cfg.save_folder) / "aim"
             aim_dir.mkdir(parents=True, exist_ok=True)
-            cfg.aim = aim.Run(
+            aim_run = aim.Run(
                 repo=aim_dir,
                 experiment=cfg.logging.name
             )
             for tag in cfg.logging.tags:
-                cfg.aim.add_tag(tag)
-            cfg.aim['config'] = cfg.asdict(exclude=["aim", "logging"])
+                aim_run.add_tag(tag)
+            aim_run['config'] = cfg.asdict(exclude=["logging"])
+            cfg.aim = aim_run
 
     barrier()
 
