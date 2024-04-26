@@ -20,6 +20,7 @@ import torch
 import torch.distributed as dist
 import torch.nn.functional as F
 import wandb
+import aim
 from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
 from torch.utils.data import DataLoader
 
@@ -831,21 +832,21 @@ class Trainer:
         )
 
     def should_log_optim_metrics_this_step(self) -> bool:
-        if self.cfg.wandb is None:
+        if self.cfg.logging is None:
             # We only log optimizer-specific metrics to W&B, since there are usually too many metrics
             # to log to the console.
             return False
         optim_log_interval = self.cfg.optimizer.metrics_log_interval
         if optim_log_interval is None:
-            optim_log_interval = self.cfg.wandb.log_interval
+            optim_log_interval = self.cfg.logging.log_interval
         else:
-            optim_log_interval = max(optim_log_interval, self.cfg.wandb.log_interval)
+            optim_log_interval = max(optim_log_interval, self.cfg.logging.log_interval)
         return self.global_step % optim_log_interval == 0
 
     def should_log_this_step(self) -> bool:
         if self.global_step % self.cfg.console_log_interval == 0:
             return True
-        elif self.cfg.wandb is not None and self.global_step % self.cfg.wandb.log_interval == 0:
+        elif self.cfg.logging is not None and self.global_step % self.cfg.logging.log_interval == 0:
             return True
         else:
             return False
@@ -962,6 +963,8 @@ class Trainer:
             eval_metrics = self.eval()
             if wandb.run is not None:
                 wandb.log(eval_metrics, step=self.global_step)
+            if self.cfg.aim is not None:
+                self.cfg.aim.track(eval_metrics, step=self.global_step)
 
         # Set model to 'train' mode.
         self.fsdp_model.train()
@@ -977,6 +980,8 @@ class Trainer:
             self.log_metrics_to_console("Pre-train system metrics", sys_metrics)
             if wandb.run is not None:
                 wandb.log(sys_metrics, step=0)
+            if self.cfg.aim is not None:
+                self.cfg.aim.track(sys_metrics, step=self.global_step)
 
         # Python Profiler stuff
         if self.cfg.python_profiling:
@@ -1078,10 +1083,18 @@ class Trainer:
                     # Log metrics to W&B.
                     if (
                         wandb.run is not None
-                        and self.cfg.wandb is not None
-                        and self.global_step % self.cfg.wandb.log_interval == 0
+                        and self.cfg.logging is not None
+                        and self.global_step % self.cfg.logging.log_interval == 0
                     ):
                         wandb.log(metrics, step=self.global_step)
+
+                    # Log metrics to aim.
+                    if (
+                        self.cfg.aim is not None
+                        and self.cfg.logging is not None
+                        and self.global_step % self.cfg.logging.log_interval == 0
+                    ):
+                        self.cfg.aim.track(metrics, step=self.global_step)
 
                     # Check if/when run should be canceled.
                     if not cancel_initiated and self.global_step % self.cfg.canceled_check_interval == 0:

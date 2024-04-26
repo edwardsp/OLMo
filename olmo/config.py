@@ -44,9 +44,8 @@ __all__ = [
     "PaddingDirection",
     "TruncationDirection",
     "SpeedMonitorConfig",
-    "WandbConfig",
     "CompilerConfig",
-    "WandbConfig",
+    "LoggingConfig",
     "FSDPPrecision",
     "FSDPWrapStrategy",
     "FSDPConfig",
@@ -585,7 +584,8 @@ class TokenizerConfig(BaseConfig):
 
 
 @dataclass
-class WandbConfig(BaseConfig):
+class LoggingConfig(BaseConfig):
+    method: str = "wandb"
     project: Optional[str] = None
     entity: Optional[str] = "ai2-llm"
     group: Optional[str] = None
@@ -987,9 +987,9 @@ class TrainConfig(BaseConfig):
     Precision to train with (e.g. "amp_bf16", "amp_fp16", or "fp32").
     """
 
-    wandb: Optional[WandbConfig] = None
+    logging: Optional[LoggingConfig] = None
     """
-    Weights & Biases configuration.
+    Logging configuration (supporting Weights and Biases and Aim).
     """
 
     speed_monitor: SpeedMonitorConfig = field(default_factory=SpeedMonitorConfig)

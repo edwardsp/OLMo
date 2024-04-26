@@ -10,6 +10,7 @@ import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
 import wandb
+import aim
 from packaging import version
 from torch.distributed.device_mesh import DeviceMesh, init_device_mesh
 from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
@@ -90,18 +91,29 @@ def main(cfg: TrainConfig) -> None:
     barrier()
 
     # Maybe start W&B run.
-    if cfg.wandb is not None and (get_global_rank() == 0 or not cfg.wandb.rank_zero_only):
-        wandb_dir = Path(cfg.save_folder) / "wandb"
-        wandb_dir.mkdir(parents=True, exist_ok=True)
-        wandb.init(
-            dir=wandb_dir,
-            project=cfg.wandb.project,
-            entity=cfg.wandb.entity,
-            group=cfg.wandb.group,
-            name=cfg.wandb.name,
-            tags=cfg.wandb.tags,
-            config=cfg.asdict(exclude=["wandb"]),
-        )
+    if cfg.logging is not None and (get_global_rank() == 0 or not cfg.logging.rank_zero_only):
+        if logging.method == "wandb":
+            wandb_dir = Path(cfg.save_folder) / "wandb"
+            wandb_dir.mkdir(parents=True, exist_ok=True)
+            wandb.init(
+                dir=wandb_dir,
+                project=cfg.logging.project,
+                entity=cfg.logging.entity,
+                group=cfg.logging.group,
+                name=cfg.logging.name,
+                tags=cfg.logging.tags,
+                config=cfg.asdict(exclude=["logging"]),
+            )
+        elif logging.method == "aim":
+            aim_dir = Path(cfg.save_folder) / "aim"
+            aim_dir.mkdir(parents=True, exist_ok=True)
+            cfg.aim = aim.Run(
+                repo=aim_dir,
+                experiment=cfg.logging.name
+            )
+            for tag in cfg.logging.tags:
+                cfg.aim.add_tag(tag)
+            cfg.aim['config'] = cfg.asdict(exclude=["aim", "logging"])
 
     barrier()
 

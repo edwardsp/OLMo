@@ -2,7 +2,8 @@ run_name: OLMo-1B
 seed: 6198
 dry_run: false
 
-wandb:
+logging:
+  method: aim
   name: ${run_name}
   project: olmo-small
 
