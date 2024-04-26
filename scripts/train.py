@@ -11,6 +11,7 @@ import torch.distributed as dist
 import torch.multiprocessing as mp
 import wandb
 import aim
+import json
 from packaging import version
 from torch.distributed.device_mesh import DeviceMesh, init_device_mesh
 from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
@@ -128,7 +129,7 @@ def main(cfg: TrainConfig) -> None:
             for tag in cfg.logging.tags:
                 aim_run.add_tag(tag)
             print(convert_to_basic_types(cfg.asdict(exclude=["logging"])))
-            aim_run['config'] = convert_to_basic_types(cfg.asdict(exclude=["logging"]))
+            aim_run['config'] = json.loads(json.dumps(cfg.asdict(exclude=["logging"])))
             cfg.aim = aim_run
 
     barrier()
