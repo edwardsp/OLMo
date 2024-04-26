@@ -129,7 +129,7 @@ def main(cfg: TrainConfig) -> None:
             for tag in cfg.logging.tags:
                 aim_run.add_tag(tag)
             print(convert_to_basic_types(cfg.asdict(exclude=["logging"])))
-            aim_run['config'] = json.loads(json.dumps(cfg.asdict(exclude=["logging"])))
+            aim_run['config'] = json.loads(json.dumps(convert_to_basic_types(cfg.asdict(exclude=["logging"]))))
             cfg.aim = aim_run
 
     barrier()
