@@ -38,6 +38,20 @@ from olmo.util import clean_opt, log_extra_field, prepare_cli_environment
 log = logging.getLogger("train")
 
 
+def convert_to_basic_types(data):
+    if isinstance(data, dict):
+        return {key: convert_to_basic_types(value) for key, value in data.items()}
+    elif isinstance(data, list):
+        return [convert_to_basic_types(item) for item in data]
+    elif isinstance(data, (int, float, str, bool, type(None))):
+        return data
+    elif isinstance(data, (set, tuple)):
+        # Converting set/tuple to list
+        return [convert_to_basic_types(item) for item in data]
+    else:
+        # For any other type, returning its string representation
+        return str(data)
+
 def main(cfg: TrainConfig) -> None:
     # Ensure run name set.
     if cfg.run_name is None:
@@ -113,8 +127,8 @@ def main(cfg: TrainConfig) -> None:
             )
             for tag in cfg.logging.tags:
                 aim_run.add_tag(tag)
-            print(cfg.asdict(exclude=["logging"]))
-            #aim_run['config'] = cfg.asdict(exclude=["logging"])
+            print(convert_to_basic_types(cfg.asdict(exclude=["logging"])))
+            aim_run['config'] = convert_to_basic_types(cfg.asdict(exclude=["logging"]))
             cfg.aim = aim_run
 
     barrier()
