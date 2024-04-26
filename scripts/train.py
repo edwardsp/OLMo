@@ -92,7 +92,7 @@ def main(cfg: TrainConfig) -> None:
 
     # Maybe start W&B run.
     if cfg.logging is not None and (get_global_rank() == 0 or not cfg.logging.rank_zero_only):
-        if logging.method == "wandb":
+        if cfg.logging.method == "wandb":
             wandb_dir = Path(cfg.save_folder) / "wandb"
             wandb_dir.mkdir(parents=True, exist_ok=True)
             wandb.init(
@@ -104,7 +104,7 @@ def main(cfg: TrainConfig) -> None:
                 tags=cfg.logging.tags,
                 config=cfg.asdict(exclude=["logging"]),
             )
-        elif logging.method == "aim":
+        elif cfg.logging.method == "aim":
             aim_dir = Path(cfg.save_folder) / "aim"
             aim_dir.mkdir(parents=True, exist_ok=True)
             cfg.aim = aim.Run(
